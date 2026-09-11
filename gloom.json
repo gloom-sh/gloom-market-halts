@@ -1,0 +1,25 @@
+{
+  "id": "market-halts",
+  "name": "Market Halts",
+  "icon": "icon.svg",
+  "tagline": "Current and recent US trading halts from Nasdaq Trader",
+  "description": "Every current and recent US trading halt from the Nasdaq Trader feed, with the halt reason code, halt time, and resumption times. Select a row to open the ticker.",
+  "categories": [
+    "markets"
+  ],
+  "targets": [
+    "cli",
+    "tui",
+    "desktop",
+    "web"
+  ],
+  "hosts": [
+    "nasdaqtrader.com"
+  ],
+  "contributes": {
+    "panes": [
+      "market-halts"
+    ]
+  },
+  "minGloom": "0.15.0"
+}
