@@ -1,7 +1,7 @@
 {
   "id": "market-halts",
   "name": "Market Halts",
-  "icon": "icon.svg",
+  "icon": "icon.webp",
   "tagline": "Current and recent US trading halts from Nasdaq Trader",
   "description": "Every current and recent US trading halt from the Nasdaq Trader feed, with the halt reason code, halt time, and resumption times. Select a row to open the ticker.",
   "categories": [
