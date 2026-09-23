@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DataTableView,
-  EmptyState, PaneStatusBody, Tabs,
+  EmptyState, PaneStatusBody, Tabs, usePaneHeaderTabs,
   type DataTableCell,
   type DataTableKeyEvent
 } from "gloomberb/components";
@@ -42,6 +42,7 @@ import {
 /** Halted rows flip to resumed on the clock alone, so the pane re-reads it. */
 const EMPTY_RECORDS: HaltRecord[] = [];
 const STATUS_TICK_MS = 15_000;
+const HALT_FILTER_TABS = HALT_FILTERS.map((entry) => ({ label: entry.label, value: entry.value as string }));
 
 export function MarketHaltsPane({ focused, width, height }: PaneProps) {
   const { pinTicker } = usePluginTickerActions();
@@ -73,6 +74,7 @@ export function MarketHaltsPane({ focused, width, height }: PaneProps) {
   }, [rows, selectedId]);
 
   const refresh = useCallback(() => load(), [load]);
+  const selectFilter = useCallback((value: string) => setFilter(value as HaltFilter), []);
   const cycleFilter = useCallback(() => setFilter((current) => nextHaltFilter(current)), []);
   const cycleSort = useCallback((step: 1 | -1) => {
     setSortPreference((current) => cycleSortPreference(HALT_SORT_COLUMN_IDS, current, step));
@@ -112,6 +114,16 @@ export function MarketHaltsPane({ focused, width, height }: PaneProps) {
   }, { enabled: focused });
 
   const columns = useMemo(() => buildHaltColumns(width), [width]);
+
+  // The only partition of this pane: the desktop draws it in the title bar and
+  // the body starts with the table instead of spending a row on the strip.
+  const tabsInHeader = usePaneHeaderTabs({
+    tabs: HALT_FILTER_TABS,
+    activeValue: filter,
+    onSelect: selectFilter,
+    focused,
+    keyboardNavigation: false,
+  });
 
   usePaneStatusFooter({
     registrationId: MARKET_HALTS_PANE_ID,
@@ -167,12 +179,12 @@ export function MarketHaltsPane({ focused, width, height }: PaneProps) {
     }
   }, [now]);
 
-  const tabs = (
+  const tabs = tabsInHeader ? null : (
     <Box height={1} flexShrink={0} overflow="hidden">
       <Tabs
-        tabs={HALT_FILTERS.map((entry) => ({ label: entry.label, value: entry.value }))}
+        tabs={HALT_FILTER_TABS}
         activeValue={filter}
-        onSelect={(value) => setFilter(value as HaltFilter)}
+        onSelect={selectFilter}
         compact
         variant="bare"
         focused={focused}
@@ -207,7 +219,7 @@ export function MarketHaltsPane({ focused, width, height }: PaneProps) {
       <DataTableView<HaltRecord, HaltColumn>
         focused={focused}
         rootWidth={width}
-        rootHeight={Math.max(1, height - 1)}
+        rootHeight={Math.max(1, height - (tabsInHeader ? 0 : 1))}
         selection={{
           kind: "id",
           selectedId,
