@@ -9,6 +9,7 @@ import {
 } from "./client";
 import {
   DEFAULT_HALT_SORT,
+  buildHaltColumns,
   etWallClockToUtcMs,
   filterHalts,
   formatEtResumption,
@@ -175,6 +176,19 @@ describe("halt table", () => {
       .toEqual(["WNTR", "OVER", "ADXN"]);
     expect(sortHalts(records, { columnId: "market", direction: "asc" }, Date.now()).map((row) => row.market))
       .toEqual(["AMEX", "NASDAQ", "NYSE"]);
+  });
+
+  test("drops columns rather than push STATUS past a narrow pane's edge", () => {
+    for (const width of [68, 88, 122]) {
+      const columns = buildHaltColumns(width);
+      // As the table draws it: a header never narrower than its label plus the
+      // sort arrow, a gap after each column, and a pad cell at each edge.
+      const drawn = columns.reduce((total, column) => total + Math.max(column.width, column.label.length + 2) + 1, 2);
+      expect(drawn).toBeLessThanOrEqual(width);
+      expect(columns.at(-1)?.id).toBe("status");
+    }
+    expect(buildHaltColumns(88).map((column) => column.id)).not.toContain("market");
+    expect(buildHaltColumns(122)).toHaveLength(10);
   });
 
   test("dates a resumption that lands on another session", () => {
