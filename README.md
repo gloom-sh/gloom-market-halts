@@ -14,7 +14,9 @@ Open `HALT` in the command bar. Also in the hosted web app at term.gloom.sh, whe
 
 ## Usage
 
-`f` cycles the filter, `[` and `]` cycle the sort, `r` refreshes. Activate a row to open the ticker. The pane refreshes on its own and reports the feed's status in the footer and the Connections pane.
+All, Active and Resumed filter the table from the pane's tab strip; `f` cycles them. `[` and `]` cycle the sort, `r` refreshes. Activate a row to open the ticker. The pane refreshes on its own and reports the feed's status in the footer and the Connections pane.
+
+A narrow pane drops columns instead of scrolling sideways, in this order: market, quote resumption, reason code, company. The status column always stays.
 
 ## Data
 

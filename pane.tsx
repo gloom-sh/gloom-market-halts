@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DataTableView,
-  EmptyState, PaneStatusBody, Tabs, usePaneHeaderTabs,
+  PaneStatusBody, Tabs, usePaneHeaderTabs,
   type DataTableCell,
   type DataTableKeyEvent
 } from "gloomberb/components";
@@ -76,9 +76,15 @@ export function MarketHaltsPane({ focused, width, height }: PaneProps) {
   const refresh = useCallback(() => load(), [load]);
   const selectFilter = useCallback((value: string) => setFilter(value as HaltFilter), []);
   const cycleFilter = useCallback(() => setFilter((current) => nextHaltFilter(current)), []);
+  const columns = useMemo(() => buildHaltColumns(width), [width]);
+  // A narrow pane drops columns; the sort keys only step through the ones on screen.
+  const sortColumnIds = useMemo(
+    () => HALT_SORT_COLUMN_IDS.filter((id) => columns.some((column) => column.id === id)),
+    [columns],
+  );
   const cycleSort = useCallback((step: 1 | -1) => {
-    setSortPreference((current) => cycleSortPreference(HALT_SORT_COLUMN_IDS, current, step));
-  }, []);
+    setSortPreference((current) => cycleSortPreference(sortColumnIds, current, step));
+  }, [sortColumnIds]);
   const handleHeaderClick = useCallback((columnId: string) => {
     setSortPreference((current) => nextHaltSort(current, columnId));
   }, []);
@@ -112,8 +118,6 @@ export function MarketHaltsPane({ focused, width, height }: PaneProps) {
     if (event.targetEditable || event.defaultPrevented || event.propagationStopped) return;
     handlePaneKey(event as DataTableKeyEvent);
   }, { enabled: focused });
-
-  const columns = useMemo(() => buildHaltColumns(width), [width]);
 
   // The only partition of this pane: the desktop draws it in the title bar and
   // the body starts with the table instead of spending a row on the strip.
@@ -206,9 +210,7 @@ export function MarketHaltsPane({ focused, width, height }: PaneProps) {
     return (
       <Box flexDirection="column" width={width} height={height}>
         {tabs}
-        <Box padding={1}>
-          <EmptyState status={error ? "error" : "empty"} title="Trading halts unavailable." message={error ?? undefined} />
-        </Box>
+        <PaneStatusBody error={error} errorTitle="Trading halts unavailable." />
       </Box>
     );
   }

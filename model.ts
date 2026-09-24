@@ -224,25 +224,57 @@ export type HaltSortPreference = SortPreference<HaltColumnId>;
 /** Newest halt first: the reason anyone opens this pane. */
 export const DEFAULT_HALT_SORT: HaltSortPreference = { columnId: "halted", direction: "desc" };
 
-export function buildHaltColumns(width: number): HaltColumn[] {
+const COMPANY_MIN_WIDTH = 12;
+const REASON_MIN_WIDTH = 14;
+
+/**
+ * Every column at its narrowest. CODE is six cells because the table never
+ * draws a column narrower than its header plus the sort arrow.
+ */
+const HALT_COLUMNS: readonly HaltColumn[] = [
+  { id: "symbol", label: "SYMBOL", width: 8, align: "left" },
   // "Non NASDAQ" and "NYSE Arca" are real feed values, so MKT holds all ten cells.
-  const fixed = 8 + 10 + 5 + 9 + 9 + 11 + 11 + 8;
-  const gaps = 12;
-  const flexible = Math.max(26, width - fixed - gaps);
-  const companyWidth = Math.max(12, Math.floor(flexible * 0.45));
-  const reasonWidth = Math.max(14, flexible - companyWidth);
-  return [
-    { id: "symbol", label: "SYMBOL", width: 8, align: "left" },
-    { id: "market", label: "MKT", width: 10, align: "left" },
-    { id: "company", label: "COMPANY", width: companyWidth, align: "left" },
-    { id: "code", label: "CODE", width: 5, align: "left" },
-    { id: "reason", label: "REASON", width: reasonWidth, align: "left" },
-    { id: "date", label: "DATE ET", width: 9, align: "left" },
-    { id: "halted", label: "HALT ET", width: 9, align: "left" },
-    { id: "quote", label: "QUOTE ET", width: 11, align: "left" },
-    { id: "trade", label: "TRADE ET", width: 11, align: "left" },
-    { id: "status", label: "STATUS", width: 8, align: "left" },
-  ];
+  { id: "market", label: "MKT", width: 10, align: "left" },
+  { id: "company", label: "COMPANY", width: COMPANY_MIN_WIDTH, align: "left", flexGrow: 1 },
+  { id: "code", label: "CODE", width: 6, align: "left" },
+  { id: "reason", label: "REASON", width: REASON_MIN_WIDTH, align: "left", flexGrow: 1 },
+  { id: "date", label: "DATE ET", width: 9, align: "left" },
+  { id: "halted", label: "HALT ET", width: 9, align: "left" },
+  { id: "quote", label: "QUOTE ET", width: 11, align: "left" },
+  { id: "trade", label: "TRADE ET", width: 11, align: "left" },
+  { id: "status", label: "STATUS", width: 8, align: "left" },
+];
+
+/**
+ * What a narrow pane gives up first, so STATUS never scrolls out of view. MKT
+ * is only the venue, STATUS already reads QUOTE once quoting resumes, and
+ * REASON spells out CODE. Symbol, reason, halt date and time, trade
+ * resumption and status always stay.
+ */
+const NARROW_DROP_ORDER: readonly HaltColumnId[] = ["market", "quote", "code", "company"];
+
+/** One gap after every column, a pad cell at each edge, and a cell for the scrollbar. */
+function haltTableWidth(columns: readonly HaltColumn[]): number {
+  return columns.reduce((total, column) => total + column.width + 1, 3);
+}
+
+export function buildHaltColumns(width: number): HaltColumn[] {
+  let columns = HALT_COLUMNS;
+  for (const id of NARROW_DROP_ORDER) {
+    if (haltTableWidth(columns) <= width) break;
+    columns = columns.filter((column) => column.id !== id);
+  }
+  // The two text columns share what is left, the company a little under half.
+  const spare = Math.max(0, width - haltTableWidth(columns));
+  const hasCompany = columns.some((column) => column.id === "company");
+  const text = (hasCompany ? COMPANY_MIN_WIDTH : 0) + REASON_MIN_WIDTH + spare;
+  const companyWidth = hasCompany ? Math.max(COMPANY_MIN_WIDTH, Math.floor(text * 0.45)) : 0;
+  const reasonWidth = text - companyWidth;
+  return columns.map((column) => {
+    if (column.id === "company") return { ...column, width: companyWidth };
+    if (column.id === "reason") return { ...column, width: reasonWidth };
+    return { ...column };
+  });
 }
 
 function haltSortValue(columnId: HaltColumnId, record: HaltRecord, now: number): string | number | null {
