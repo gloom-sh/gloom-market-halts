@@ -2,7 +2,9 @@
 
 Every current and recent US trading halt from the Nasdaq Trader feed, with the halt reason code, halt time, and resumption times.
 
-## Install
+> Market Halts is built into Gloom v0.15.3 and later: open `HALT` in the command bar, with nothing to install from here. This repository is for older versions.
+
+## Install on older versions
 
 Requires Gloom 0.15.0 or newer. Gloom restores this plugin once for existing installations when it moves out of the core app: saved panes keep working because the pane and template ids are unchanged, a previously disabled plugin stays disabled, and a deliberate removal is respected.
 
